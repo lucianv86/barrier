@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Barrier Access</title>
   <style>
     body {
@@ -27,6 +27,7 @@
     .pin-container {
       display: flex;
       gap: 10px;
+      margin-bottom: 20px;
     }
 
     .pin-container input {
@@ -41,7 +42,7 @@
     }
 
     button {
-      margin-top: 30px;
+      margin-top: 10px;
       padding: 15px 30px;
       font-size: 1.2rem;
       border: none;
@@ -59,6 +60,7 @@
       margin-top: 20px;
       font-size: 1rem;
       color: #f8d776;
+      text-align: center;
     }
   </style>
 </head>
@@ -67,10 +69,10 @@
   <h1>Enter Access PIN</h1>
 
   <div class="pin-container">
-    <input type="password" maxlength="1" inputmode="numeric">
-    <input type="password" maxlength="1" inputmode="numeric">
-    <input type="password" maxlength="1" inputmode="numeric">
-    <input type="password" maxlength="1" inputmode="numeric">
+    <input type="text" maxlength="1" inputmode="numeric" />
+    <input type="text" maxlength="1" inputmode="numeric" />
+    <input type="text" maxlength="1" inputmode="numeric" />
+    <input type="text" maxlength="1" inputmode="numeric" />
   </div>
 
   <button id="submitBtn" disabled>Open Barrier</button>
@@ -81,12 +83,13 @@
     const button = document.getElementById('submitBtn');
     const message = document.getElementById('message');
 
-    const validHash = '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8';
+    // Replace this hash with your actual hashed PIN (e.g., SHA-256 of "1234")
+    const validHash = '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8'; // Replace this
 
-    // Auto-tab to next input
+    // Auto-focus and move to next field
     inputs.forEach((input, idx) => {
       input.addEventListener('input', () => {
-        if (input.value && idx < inputs.length - 1) {
+        if (input.value.length === 1 && idx < inputs.length - 1) {
           inputs[idx + 1].focus();
         }
         checkReady();
@@ -117,11 +120,11 @@
 
       if (hashed === validHash) {
         message.textContent = "Access granted. Opening barrier...";
-        fetch("https://blynk.cloud/external/api/update?token=YOUR_TOKEN&pin=V0&value=1")
+        fetch("https://blynk.cloud/external/api/update?token=YP2ihYjktFqA70ocVXo2XVyqpCJUoJK4&pin=V0&value=1")
           .then(() => {
             message.textContent = "Barrier opened successfully.";
             setTimeout(() => {
-              window.close(); // Close tab if opened in new window
+              window.close();
             }, 2000);
           })
           .catch(() => {
