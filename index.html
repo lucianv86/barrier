@@ -1,13 +1,139 @@
 <!DOCTYPE html>
-<html>
-  <head>
-    <title>Opening...</title>
-    <script>
-      fetch("https://blynk.cloud/external/api/update?token=YP2ihYjktFqA70ocVXo2XVyqpCJUoJK4&pin=V0&value=1")
-        .then(() => window.close());
-    </script>
-  </head>
-  <body>
-    <h1>Opening Barrier...</h1>
-  </body>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Barrier Access</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #1a1a1a, #333);
+      color: white;
+      font-family: 'Segoe UI', sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    h1 {
+      font-size: 1.8rem;
+      margin-bottom: 20px;
+      text-align: center;
+    }
+
+    .pin-container {
+      display: flex;
+      gap: 10px;
+    }
+
+    .pin-container input {
+      width: 60px;
+      height: 60px;
+      font-size: 2rem;
+      text-align: center;
+      border: none;
+      border-radius: 10px;
+      background-color: #fff;
+      color: #000;
+    }
+
+    button {
+      margin-top: 30px;
+      padding: 15px 30px;
+      font-size: 1.2rem;
+      border: none;
+      border-radius: 8px;
+      background-color: #4CAF50;
+      color: white;
+      cursor: pointer;
+    }
+
+    button:disabled {
+      background-color: #888;
+    }
+
+    .message {
+      margin-top: 20px;
+      font-size: 1rem;
+      color: #f8d776;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Enter Access PIN</h1>
+
+  <div class="pin-container">
+    <input type="password" maxlength="1" inputmode="numeric">
+    <input type="password" maxlength="1" inputmode="numeric">
+    <input type="password" maxlength="1" inputmode="numeric">
+    <input type="password" maxlength="1" inputmode="numeric">
+  </div>
+
+  <button id="submitBtn" disabled>Open Barrier</button>
+  <div class="message" id="message"></div>
+
+  <script>
+    const inputs = document.querySelectorAll('.pin-container input');
+    const button = document.getElementById('submitBtn');
+    const message = document.getElementById('message');
+
+    const validHash = '5e884898da28047151d0e56f8dc6292773603d0d6aabbdd62a11ef721d1542d8';
+
+    // Auto-tab to next input
+    inputs.forEach((input, idx) => {Ï
+      input.addEventListener('input', () => {
+        if (input.value && idx < inputs.length - 1) {
+          inputs[idx + 1].focus();
+        }
+        checkReady();
+      });
+
+      input.addEventListener('keydown', (e) => {
+        if (e.key === "Backspace" && !input.value && idx > 0) {
+          inputs[idx - 1].focus();
+        }
+      });
+    });
+
+    function checkReady() {
+      const filled = Array.from(inputs).every(input => input.value);
+      button.disabled = !filled;
+    }
+
+    async function hashPIN(pin) {
+      const encoder = new TextEncoder();
+      const data = encoder.encode(pin);
+      const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+      return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    button.addEventListener('click', async () => {
+      const pin = Array.from(inputs).map(input => input.value).join('');
+      const hashed = await hashPIN(pin);
+
+      if (hashed === validHash) {
+        message.textContent = "Access granted. Opening barrier...";
+        fetch("https://blynk.cloud/external/api/update?token=YOUR_TOKEN&pin=V0&value=1")
+          .then(() => {
+            message.textContent = "Barrier opened successfully.";
+            setTimeout(() => {
+              window.close(); // Close tab if opened in new window
+            }, 2000);
+          })
+          .catch(() => {
+            message.textContent = "Failed to send request.";
+          });
+      } else {
+        message.textContent = "Incorrect PIN.";
+        inputs.forEach(input => input.value = '');
+        inputs[0].focus();
+        button.disabled = true;
+      }
+    });
+  </script>
+</body>
 </html>
