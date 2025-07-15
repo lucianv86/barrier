@@ -8,7 +8,7 @@
     body {
       margin: 0;
       padding: 0;
-      background: linear-gradient(135deg, #1a1a1a, #333);
+      background: linear-gradient(135deg, #1a1a1a, #2c2c2c);
       color: white;
       font-family: 'Segoe UI', sans-serif;
       display: flex;
@@ -16,17 +16,28 @@
       align-items: center;
       justify-content: center;
       height: 100vh;
+      text-align: center;
     }
 
     h1 {
-      font-size: 1.8rem;
-      margin-bottom: 20px;
-      text-align: center;
+      font-size: 2rem;
+      margin-bottom: 10px;
+    }
+
+    .status {
+      margin-bottom: 30px;
+      font-size: 1rem;
+      color: #f8d776;
+    }
+
+    .offline {
+      color: #ff6666;
     }
 
     .pin-container {
       display: flex;
       gap: 10px;
+      justify-content: center;
       margin-bottom: 20px;
     }
 
@@ -42,7 +53,6 @@
     }
 
     button {
-      margin-top: 10px;
       padding: 15px 30px;
       font-size: 1.2rem;
       border: none;
@@ -53,20 +63,29 @@
     }
 
     button:disabled {
-      background-color: #888;
+      background-color: #777;
+      cursor: not-allowed;
     }
 
     .message {
       margin-top: 20px;
       font-size: 1rem;
       color: #f8d776;
-      text-align: center;
+    }
+
+    .error {
+      color: #ff8888;
+    }
+
+    .success {
+      color: #7CFC00;
     }
   </style>
 </head>
 <body>
 
   <h1>Enter Access PIN</h1>
+  <div id="deviceStatus" class="status">Checking device status...</div>
 
   <div class="pin-container">
     <input type="text" maxlength="1" inputmode="numeric" />
@@ -82,11 +101,12 @@
     const inputs = document.querySelectorAll('.pin-container input');
     const button = document.getElementById('submitBtn');
     const message = document.getElementById('message');
+    const statusDisplay = document.getElementById('deviceStatus');
 
-    // Replace this hash with your actual hashed PIN (e.g., SHA-256 of "1234")
-    const validHash = '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4'; // Replace this
+    const BLYNK_TOKEN = 'YP2ihYjktFqA70ocVXo2XVyqpCJUoJK4'; 
+    const VALID_HASH = '03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4'; 
 
-    // Auto-focus and move to next field
+    // Auto-focus logic
     inputs.forEach((input, idx) => {
       input.addEventListener('input', () => {
         if (input.value.length === 1 && idx < inputs.length - 1) {
@@ -104,7 +124,7 @@
 
     function checkReady() {
       const filled = Array.from(inputs).every(input => input.value);
-      button.disabled = !filled;
+      button.disabled = !filled || !button.dataset.online;
     }
 
     async function hashPIN(pin) {
@@ -118,25 +138,50 @@
       const pin = Array.from(inputs).map(input => input.value).join('');
       const hashed = await hashPIN(pin);
 
-      if (hashed === validHash) {
+      if (hashed === VALID_HASH) {
+        message.className = 'message';
         message.textContent = "Access granted. Opening barrier...";
-        fetch("https://blynk.cloud/external/api/update?token=YP2ihYjktFqA70ocVXo2XVyqpCJUoJK4&pin=V0&value=1")
+
+        fetch(`https://blynk.cloud/external/api/update?token=${BLYNK_TOKEN}&pin=V0&value=1`)
           .then(() => {
+            message.className = 'message success';
             message.textContent = "Barrier opened successfully.";
-            setTimeout(() => {
-              window.close();
-            }, 2000);
+            setTimeout(() => window.close(), 2000);
           })
           .catch(() => {
+            message.className = 'message error';
             message.textContent = "Failed to send request.";
           });
       } else {
+        message.className = 'message error';
         message.textContent = "Incorrect PIN.";
         inputs.forEach(input => input.value = '');
         inputs[0].focus();
-        button.disabled = true;
+        checkReady();
       }
     });
+
+    // Check if device is online
+    fetch(`https://blynk.cloud/external/api/isHardwareConnected?token=${BLYNK_TOKEN}`)
+      .then(res => res.text())
+      .then(status => {
+        if (status === "true") {
+          button.dataset.online = "true";
+          statusDisplay.textContent = "Device is online.";
+          checkReady();
+        } else {
+          statusDisplay.classList.add("offline");
+          statusDisplay.textContent = "⚠️ Device is offline. Please refresh the page and try again.";
+          button.disabled = true;
+          message.className = 'message error';
+          message.textContent = "";
+        }
+      })
+      .catch(() => {
+        statusDisplay.classList.add("offline");
+        statusDisplay.textContent = "⚠️ Could not check device status. Try again later.";
+        button.disabled = true;
+      });
   </script>
 </body>
 </html>
